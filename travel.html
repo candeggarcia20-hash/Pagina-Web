@@ -16,7 +16,7 @@
 
         /* Estilo para el fondo con degradado y posición fija para la portada */
         .hero-section {
-            background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.7)), url('https://placehold.co/1920x1080/007bff/ffffff?text=Fondo+de+Viaje+Espectacular');
+            background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.7)), url('fondo.webp');
             background-size: cover;
             background-position: center;
             height: 100vh;
@@ -164,7 +164,7 @@
         function mostrarMensaje(texto, bgColor) {
             const mensajeBox = document.getElementById('status-message');
             mensajeBox.textContent = texto;
-            mensajeBox.className = p-4 mt-4 text-white text-sm font-semibold rounded-lg ${bgColor};
+            mensajeBox.className = `p-4 mt-4 text-white text-sm font-semibold rounded-lg ${bgColor}`;
             mensajeBox.style.display = 'block';
             setTimeout(() => {
                 mensajeBox.style.display = 'none';
