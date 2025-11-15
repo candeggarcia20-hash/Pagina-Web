@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TravelNow | Tu Agencia de Viajes</title>
+    <!-- Carga de Tailwind CSS para un diseño responsivo y moderno -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Estilos personalizados */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f7f7;
+        }
+
+        /* Estilo para el fondo con degradado y posición fija para la portada */
+        .hero-section {
+            background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.7)), url('https://placehold.co/1920x1080/007bff/ffffff?text=Fondo+de+Viaje+Espectacular');
+            background-size: cover;
+            background-position: center;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            color: white;
+        }
+
+       
+        
+
+        /* Estilo para la galería de imágenes */
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+        .gallery-item img {
+            transition: transform 0.3s ease-in-out;
+        }
+        .gallery-item:hover img {
+            transform: scale(1.05);
+        }
+
+        /* Contenedor responsivo para el video de YouTube (ratio 16:9) */
+        .video-container {
+            position: relative;
+            width: 100%;
+            padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+            height: 0;
+            overflow: hidden;
+            margin-top: 2rem;
+        }
+
+        .video-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <!-- Música de Ambiente (Auto-reproducción) -->
+    <!-- NOTA: La reproducción automática puede ser bloqueada por el navegador. 
+         Se incluye la etiqueta 'autoplay' pero puede requerir interacción del usuario. -->
+    <audio id="musicaAmbiente" autoplay loop>
+        <!-- En un entorno real, reemplazarías 'audio.mp3' por tu archivo. 
+             Aquí se usa un audio simple de Tone.js para cumplimiento del requisito. -->
+        <source src="" type="audio/mp3" onerror="document.getElementById('audio-fallback').style.display='block';">
+    </audio>
+    <div id="audio-fallback" class="fixed top-4 right-4 bg-yellow-200 text-yellow-800 p-2 rounded-lg shadow-lg hidden">
+        Haz clic en cualquier parte para iniciar la música de ambiente.
+    </div>
+    
+    <!-- Script para el fallback de audio y Tone.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+    <script>
+        // Inicializa un sintetizador simple para cumplir con el requisito de música/sonido.
+        let synth;
+        let isPlaying = false;
+
+        async function startAudio() {
+            if (isPlaying) return;
+            
+            // Usamos Tone.js como fallback ya que no podemos cargar archivos mp3 externos.
+            if (!synth) {
+                await Tone.start();
+                synth = new Tone.PolySynth(Tone.Synth).toDestination();
+                document.getElementById('audio-fallback').textContent = 'Música iniciada (synth).';
+            }
+
+            // Toca una melodía simple en loop
+            const notes = ["C4", "E4", "G4", "C5"];
+            const loop = new Tone.Loop(time => {
+                synth.triggerAttackRelease(notes[Math.floor(Math.random() * notes.length)], "8n", time);
+            }, "1m").start(0);
+
+            Tone.Transport.start();
+            isPlaying = true;
+            document.getElementById('audio-fallback').style.display = 'none';
+        }
+
+        document.addEventListener('click', startAudio, { once: true });
+        document.addEventListener('touchstart', startAudio, { once: true });
+
+        // Si el navegador permite autoplay, intentamos cargar el archivo (aunque fallará sin un URL válido)
+        const audio = document.getElementById('musicaAmbiente');
+        audio.onplay = () => {
+            document.getElementById('audio-fallback').style.display = 'none';
+        };
+        audio.onerror = () => {
+             // Si el mp3 falla, mostramos el mensaje de interacción
+             document.getElementById('audio-fallback').style.display = 'block';
+        };
+
+        // Función para guardar contactos en localStorage (Requisito del ejercicio)
+        function guardarContacto(event) {
+            event.preventDefault();
+            
+            const nombre = document.getElementById('nombre').value;
+            const email = document.getElementById('email').value;
+            const destino = document.getElementById('destino').value;
+            const mensaje = document.getElementById('mensaje').value;
+
+            if (!nombre || !email || !destino) {
+                mostrarMensaje('Por favor, completa todos los campos obligatorios.', 'bg-red-500');
+                return;
+            }
+
+            const nuevoContacto = {
+                id: Date.now(),
+                nombre: nombre,
+                email: email,
+                destinoFavorito: destino,
+                mensaje: mensaje,
+                fecha: new Date().toLocaleString()
+            };
+
+            // 1. Cargar contactos existentes
+            let contactos = JSON.parse(localStorage.getItem('travelNowContacts')) || [];
+
+            // 2. Agregar el nuevo contacto
+            contactos.push(nuevoContacto);
+
+            // 3. Guardar la lista actualizada
+            localStorage.setItem('travelNowContacts', JSON.stringify(contactos));
+
+            // 4. Actualizar la lista en pantalla
+            mostrarContactosGuardados();
+            
+            // 5. Limpiar el formulario
+            document.getElementById('contacto-form').reset();
+
+            mostrarMensaje('¡Mensaje enviado con éxito!', 'bg-green-500');
+        }
+
+        // Función para mostrar mensajes de estado
+        function mostrarMensaje(texto, bgColor) {
+            const mensajeBox = document.getElementById('status-message');
+            mensajeBox.textContent = texto;
+            mensajeBox.className = p-4 mt-4 text-white text-sm font-semibold rounded-lg ${bgColor};
+            mensajeBox.style.display = 'block';
+            setTimeout(() => {
+                mensajeBox.style.display = 'none';
+            }, 3000);
+        }
+
+        // Función para mostrar la lista de contactos guardados
+        function mostrarContactosGuardados() {
+            const listaDiv = document.getElementById('lista-contactos');
+            const contactos = JSON.parse(localStorage.getItem('travelNowContacts')) || [];
+            listaDiv.innerHTML = ''; 
+
+            if (contactos.length === 0) {
+                listaDiv.innerHTML = '<p class="text-gray-500 italic">Aún no hay contactos guardados.</p>';
+                return;
+            }
+
+            let html = '<ul class="divide-y divide-gray-200">';
+            contactos.forEach(contacto => {
+                html += `
+                    <li class="py-4">
+                        <p class="text-sm font-semibold">${contacto.nombre} (${contacto.email})</p>
+                        <p class="text-xs text-gray-600">Destino: ${contacto.destinoFavorito}</p>
+                        <p class="text-xs text-gray-500">Mensaje: ${contacto.mensaje || 'N/A'}</p>
+                        <p class="text-xs text-gray-400">Guardado el: ${contacto.fecha}</p>
+                    </li>
+                `;
+            });
+            html += '</ul>';
+            listaDiv.innerHTML = html;
+        }
+
+        // Ejecutar al cargar la página para mostrar los contactos guardados
+        document.addEventListener('DOMContentLoaded', () => {
+            mostrarContactosGuardados();
+            document.getElementById('contacto-form').addEventListener('submit', guardarContacto);
+        });
+
+    </script>
+
+    <!-- Barra de Navegación -->
+    <header class="fixed top-0 left-0 w-full bg-white bg-opacity-90 shadow-lg z-50">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <!-- Logo y Nombre de la Empresa -->
+            <div class="flex items-center space-x-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                </svg>
+                <span class="text-2xl font-bold text-indigo-600">TravelNow</span>
+            </div>
+            
+            <!-- Menú de Navegación Sencillo -->
+            <nav>
+                <ul class="flex space-x-6 text-sm font-medium">
+                    <li><a href="#inicio" class="text-gray-600 hover:text-indigo-600 transition duration-300">Inicio</a></li>
+                    <li><a href="#destinos" class="text-gray-600 hover:text-indigo-600 transition duration-300">Destinos</a></li>
+                    <li><a href="#contacto" class="text-gray-600 hover:text-indigo-600 transition duration-300">Contacto</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Pantalla Principal (Hero Section) -->
+    <section id="inicio" class="hero-section">
+        <h1 class="text-5xl md:text-7xl font-extrabold mb-4 animate-fadeIn">
+            Tu Próxima Aventura Empieza Aquí
+        </h1>
+        <p class="text-xl md:text-2xl font-light mb-8 max-w-2xl">
+            Explora el mundo con TravelNow. Paquetes turísticos inolvidables y experiencias únicas.
+        </p>
+        <a href="#destinos" class="px-8 py-3 bg-indigo-600 text-white text-lg font-semibold rounded-full shadow-lg hover:bg-indigo-700 transition duration-300 transform hover:scale-105">
+            Ver Destinos
+        </a>
+    </section>
+
+    <!-- Sección de Multimedia: Galería de Imágenes -->
+    <section id="destinos" class="py-16 md:py-24 bg-white">
+        <div class="container mx-auto px-4">
+            <h2 class="text-4xl font-bold text-center mb-12 text-indigo-600">Nuestros Destinos Destacados</h2>
+            
+            <div class="gallery-grid">
+                <!-- Tarjeta de Destino 1: Playa -->
+                <div class="gallery-item bg-white rounded-xl shadow-lg overflow-hidden transition-shadow duration-300 hover:shadow-xl">
+                    <img src="caribe.jpg" alt="Playa Tropical" class="w-full h-48 object-cover rounded-t-xl">
+                    <div class="p-4">
+                        <h3 class="text-xl font-semibold text-gray-900">El Caribe Soñado</h3>
+                        <p class="text-sm text-gray-600 mt-1">Arena blanca, sol y mar turquesa. ¡Relajación total!</p>
+                    </div>
+                </div>
+
+                <!-- Tarjeta de Destino 2: Montaña -->
+                <div class="gallery-item bg-white rounded-xl shadow-lg overflow-hidden transition-shadow duration-300 hover:shadow-xl">
+                    <img src="alpes.webp" alt="Montaña Nevada" class="w-full h-48 object-cover rounded-t-xl">
+                    <div class="p-4">
+                        <h3 class="text-xl font-semibold text-gray-900">Alpes Suizos</h3>
+                        <p class="text-sm text-gray-600 mt-1">Aventuras en la nieve y paisajes impresionantes.</p>
+                    </div>
+                </div>
+
+                <!-- Tarjeta de Destino 3: Ciudad Histórica -->
+                <div class="gallery-item bg-white rounded-xl shadow-lg overflow-hidden transition-shadow duration-300 hover:shadow-xl">
+                    <img src="roma.avif" alt="Ciudad Histórica" class="w-full h-48 object-cover rounded-t-xl">
+                    <div class="p-4">
+                        <h3 class="text-xl font-semibold text-gray-900">Roma Antigua</h3>
+                        <p class="text-sm text-gray-600 mt-1">Historia y cultura en el corazón de Europa.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Video Promocional Incrustado de YouTube -->
+            <div class="mt-16 max-w-4xl mx-auto">
+                <h3 class="text-3xl font-bold text-center mb-6 text-gray-700">Video Promocional</h3>
+                <!-- Se utiliza un video de ejemplo, reemplazar con el ID de tu video promocional -->
+                <div class="video-container rounded-xl shadow-2xl">
+                    <iframe 
+                        src="https://www.youtube.com/embed/dQw4w9WgXcQ" 
+                        title="YouTube video player" 
+                        frameborder="0" 
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                        allowfullscreen
+                        class="rounded-xl"
+                    ></iframe>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Sección de Formulario de Contacto y Lista de Contactos -->
+    <section id="contacto" class="py-16 md:py-24 bg-gray-50">
+        <div class="container mx-auto px-4 max-w-4xl">
+            <h2 class="text-4xl font-bold text-center mb-12 text-indigo-600">Planifica tu Viaje</h2>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                <!-- Formulario de Contacto -->
+                <div class="bg-white p-8 rounded-xl shadow-lg">
+                    <h3 class="text-2xl font-semibold mb-6 text-gray-800">Contáctanos</h3>
+                    <form id="contacto-form" class="space-y-4">
+                        <div>
+                            <label for="nombre" class="block text-sm font-medium text-gray-700">Nombre</label>
+                            <input type="text" id="nombre" name="nombre" required 
+                                class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                        </div>
+                        <div>
+                            <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+                            <input type="email" id="email" name="email" required 
+                                class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                        </div>
+                        <div>
+                            <label for="destino" class="block text-sm font-medium text-gray-700">Destino Favorito (o Soñado)</label>
+                            <input type="text" id="destino" name="destino" required 
+                                class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                        </div>
+                        <div>
+                            <label for="mensaje" class="block text-sm font-medium text-gray-700">Mensaje (Opcional)</label>
+                            <textarea id="mensaje" name="mensaje" rows="4" 
+                                class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500"></textarea>
+                        </div>
+                        
+                        <div id="status-message" style="display:none;" role="alert"></div>
+
+                        <button type="submit" 
+                            class="w-full py-3 px-4 border border-transparent rounded-lg shadow-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-300">
+                            Enviar Solicitud
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Lista de Contactos Guardados -->
+                <div class="bg-white p-8 rounded-xl shadow-lg lg:order-last order-first">
+                    <h3 class="text-2xl font-semibold mb-6 text-gray-800">Contactos Guardados (Local Storage)</h3>
+                    <div id="lista-contactos" class="max-h-96 overflow-y-auto">
+                        <!-- Aquí se cargarán los contactos desde JavaScript -->
+                        <p class="text-gray-500 italic">Cargando contactos...</p>
+                    </div>
+                    <p class="mt-4 text-xs text-gray-500">
+                        *Esta lista es visible solo para ti y los datos se almacenan en el navegador.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-8">
+        <div class="container mx-auto px-4 text-center">
+            <p class="text-lg font-semibold mb-2">TravelNow</p>
+            <p class="text-sm">&copy; 2024. Todos los derechos reservados.</p>
+            <div class="mt-4 text-xs text-gray-400">
+                <a href="#" class="hover:text-indigo-400 mx-2">Política de Privacidad</a> | 
+                <a href="#" class="hover:text-indigo-400 mx-2">Términos y Condiciones</a>
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>
